@@ -33,9 +33,9 @@
         let globeInstance = Globe()(document.getElementById('globeViz'));
         let isDark = true;
 
-        const darkGlobeTex = 'https://unpkg.com/three-globe/example/img/earth-dark.jpg';
+        // Bypasses the CDN block
+        const darkGlobeTex = 'https://raw.githubusercontent.com/vasturiano/three-globe/master/example/img/earth-dark.jpg';
         
-        // Generate a solid blue canvas for Light Mode water
         const lightCanvas = document.createElement('canvas');
         lightCanvas.width = 4; lightCanvas.height = 4;
         const ctx = lightCanvas.getContext('2d');
@@ -48,10 +48,19 @@
                 globeInstance.globeImageUrl(darkGlobeTex)
                     .polygonCapColor(() => 'rgba(0,0,0,0)')
                     .polygonStrokeColor(() => '#333333');
+                
+                globeInstance.globeMaterial().color.set('#ffffff');
+                globeInstance.globeMaterial().specular.set('#aaaaaa');
+                globeInstance.globeMaterial().shininess = 15;
             } else {
                 globeInstance.globeImageUrl(lightGlobeTex)
                     .polygonCapColor(() => '#ffffff')
                     .polygonStrokeColor(() => '#cbd5e0');
+
+                // RESTORED: Prevents the blinding white blowout
+                globeInstance.globeMaterial().color.set('#ffffff');
+                globeInstance.globeMaterial().specular.set('#000000');
+                globeInstance.globeMaterial().shininess = 0;
             }
         }
 
@@ -71,8 +80,8 @@
             applyTheme();
         });
 
-        // Data Rendering Loop
-        setInterval(() => {
+        // RESTORED: Exact data processing functions from your working version
+        function loadData() {
             fetch('/api/planes').then(res => res.json()).then(data => {
                 const planes = (data.states || []).map(p => ({ lat: p[6], lng: p[5], name: p[1] }));
                 globeInstance.customLayerData(planes).customThreeObject(d => {
@@ -92,7 +101,11 @@
             fetch('/api/satellites').then(res => res.json()).then(data => {
                 globeInstance.ringsData(data.sats).ringColor(() => '#9c27b0').ringMaxRadius(1.5).ringPropagationSpeed(2).ringRepeatPeriod(1000);
             }).catch(() => {});
-        }, 5000);
+        }
+
+        // Fire immediately on load, then loop
+        loadData();
+        setInterval(loadData, 5000);
     </script>
 </body>
 </html>
