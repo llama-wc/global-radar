@@ -30,22 +30,17 @@
         <div class="legend-item"><div class="legend-icon" style="background:%239c27b0; border-radius:50%; border:1px solid black;"></div> Active Satellites</div>
     </div>
 
-    <script>
+    
+        <script>
         let globeInstance = null;
         let isDark = false;
         let isTransitioning = false;
         let currentLat = 39.8, currentLng = -98.5;
 
-        // Create the Slate Grey Blue water texture for Light Mode
-        const lightGlobe = document.createElement('canvas');
-        lightGlobe.width = 1; lightGlobe.height = 1;
-        const ctx = lightGlobe.getContext('2d');
-        ctx.fillStyle = '#e3e7ed';
-        ctx.fillRect(0, 0, 1, 1);
-
         const darkGlobe = '//unpkg.com/three-globe/example/img/earth-dark.jpg';
         const landColor = '#ffffff';
         const borderColor = '#cbd5e0';
+        const waterColorLight = '#e3e7ed'; // Storing your slate blue color here
 
         function bootGlobe(onReadyCallback) {
             if (globeInstance) return;
@@ -59,8 +54,9 @@
                 globeInstance.globeMaterial().specular.set('#aaaaaa');
                 globeInstance.globeMaterial().shininess = 15;
             } else {
-                globeInstance.globeImageUrl(lightGlobe.toDataURL()).polygonCapColor(() => landColor).polygonStrokeColor(() => borderColor);
-                globeInstance.globeMaterial().color.set('#ffffff');
+                // FIX: Set image to null, and paint the globe material directly
+                globeInstance.globeImageUrl(null).polygonCapColor(() => landColor).polygonStrokeColor(() => borderColor);
+                globeInstance.globeMaterial().color.set(waterColorLight);
                 globeInstance.globeMaterial().specular.set('#000000');
                 globeInstance.globeMaterial().shininess = 0;
             }
@@ -113,9 +109,14 @@
             themeBtn.innerText = isDark ? '🌙 Dark Mode' : '☀️ Light Mode';
             if (globeInstance) {
                 if (isDark) {
-                    globeInstance.globeImageUrl(darkGlobe).globeMaterial().specular.set('#aaaaaa');
+                    globeInstance.globeImageUrl(darkGlobe);
+                    globeInstance.globeMaterial().color.set('#ffffff'); // Reset base color for image
+                    globeInstance.globeMaterial().specular.set('#aaaaaa');
                 } else {
-                    globeInstance.globeImageUrl(lightGlobe.toDataURL()).globeMaterial().specular.set('#000000');
+                    // FIX: Remove image, restore custom water color
+                    globeInstance.globeImageUrl(null);
+                    globeInstance.globeMaterial().color.set(waterColorLight);
+                    globeInstance.globeMaterial().specular.set('#000000');
                 }
             }
         });
@@ -138,18 +139,22 @@
                     obj.rotation.x = Math.PI/2;
                     return obj;
                 }).customLayerLabel('name');
-            });
+            }).catch(e => console.log("Waiting for planes API..."));
 
             // Ships
             fetch('/api/ships').then(res => res.json()).then(data => {
                 globeInstance.pointsData(data.ships).pointColor(() => '#ff9800').pointRadius(0.4).pointLabel('id');
-            });
+            }).catch(e => console.log("Waiting for ships API..."));
 
             // Satellites
             fetch('/api/satellites').then(res => res.json()).then(data => {
                 globeInstance.ringsData(data.sats).ringColor(() => '#9c27b0').ringMaxRadius(1.5).ringPropagationSpeed(2).ringRepeatPeriod(1000);
-            });
+            }).catch(e => console.log("Waiting for satellites API..."));
         }, 8000);
     </script>
+
+    
+    
+    
 </body>
 </html>

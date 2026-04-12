@@ -153,5 +153,14 @@ def get_ships():
 @app.route('/api/satellites')
 def get_satellites(): return jsonify(live_satellites)
 
+
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=8080)
+    # Hugging Face Spaces defaults to port 7860. 
+    # Using os.environ.get allows it to adapt if the environment changes.
+    port = int(os.environ.get("PORT", 7860))
+    app.run(host='0.0.0.0', port=port, debug=False)
+
+
+
+
+
