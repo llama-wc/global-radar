@@ -6,7 +6,7 @@ import json
 import time
 import random
 from skyfield.api import load, wgs84
-import config  # <--- THIS PULLS IN YOUR PASSWORDS!
+import os  # <--- Replaced 'import config' with the built-in 'os' library
 
 app = Flask(__name__)
 
@@ -32,8 +32,11 @@ def generate_ghost_fleet():
 def run_plane_fetcher():
     url = 'https://opensky-network.org/api/states/all'
     
-    # READS FROM YOUR CONFIG FILE
-    my_opensky_auth = (config.OPENSKY_USERNAME, config.OPENSKY_PASSWORD) 
+    # READS DIRECTLY FROM THE CLOUD VAULT!
+    my_opensky_auth = (
+        os.environ.get("OPENSKY_USERNAME", "wallma"), 
+        os.environ.get("OPENSKY_PASSWORD", "")
+    ) 
 
     while True:
         try:
@@ -80,7 +83,8 @@ def on_error(ws, error): pass
 def on_open(ws):
     print("Connected to AISStream!")
     subscription = {
-        "APIKey": config.AISSTREAM_API_KEY, # READS FROM YOUR CONFIG FILE
+        # READS DIRECTLY FROM THE CLOUD VAULT!
+        "APIKey": os.environ.get("AISSTREAM_API_KEY", ""), 
         "BoundingBoxes": [
             [[24.0, 54.0], [27.0, 57.0]],    
             [[24.0, -125.0], [50.0, -66.0]]  
