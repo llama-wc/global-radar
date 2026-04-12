@@ -1,3 +1,4 @@
+import os
 from flask import Flask, jsonify, render_template
 import requests
 import threading
@@ -6,11 +7,10 @@ import json
 import time
 import random
 from skyfield.api import Loader, wgs84
-import os
 
 app = Flask(__name__)
 
-# CRITICAL FIX: Forces Skyfield to cache in /tmp to avoid Cloud Permission Errors!
+# Bypasses Hugging Face write-permission errors
 load = Loader('/tmp')
 
 live_ships = {}
@@ -29,10 +29,13 @@ def run_plane_fetcher():
     url = 'https://opensky-network.org/api/states/all'
     my_opensky_auth = (os.environ.get("OPENSKY_USERNAME", "wallma"), os.environ.get("OPENSKY_PASSWORD", "")) 
 
+    # Triggers Ghost Fleet immediately on boot so the map is never empty
+    live_planes["states"] = generate_ghost_fleet()
+
     while True:
         try:
             headers = {'User-Agent': 'Python/GlobalRadarProject'}
-            response = requests.get(url, auth=my_opensky_auth, headers=headers, timeout=10)
+            response = requests.get(url, auth=my_opensky_auth, headers=headers, timeout=15)
             if response.status_code == 200:
                 data = response.json()
                 if data and data.get('states'):
@@ -68,7 +71,7 @@ def run_websocket():
                 on_message=on_message,
                 on_open=lambda ws: ws.send(json.dumps({
                     "APIKey": os.environ.get("AISSTREAM_API_KEY", ""), 
-                    "BoundingBoxes": [[[24.0, -125.0], [50.0, -66.0]]] # North America Coast
+                    "BoundingBoxes": [[[24.0, -125.0], [50.0, -66.0]]] 
                 })))
             ws.run_forever()
         except Exception:
