@@ -32,7 +32,6 @@ def generate_ghost_fleet():
 def run_plane_fetcher():
     url = 'https://opensky-network.org/api/states/all'
     
-    # READS DIRECTLY FROM THE CLOUD VAULT!
     my_opensky_auth = (
         os.environ.get("OPENSKY_USERNAME", "wallma"), 
         os.environ.get("OPENSKY_PASSWORD", "")
@@ -49,15 +48,18 @@ def run_plane_fetcher():
                     valid_planes = [p for p in data["states"] if p[5] is not None and p[6] is not None]
                     live_planes["states"] = random.sample(valid_planes, min(200, len(valid_planes)))
                     print(f"Planes updated: {len(live_planes['states'])} real aircraft tracked.")
-            elif response.status_code == 429:
-                print("OpenSky 24hr IP Ban detected. Deploying GLOBAL Ghost Fleet...")
-                live_planes["states"] = generate_ghost_fleet()
             else:
-                print(f"OpenSky API Error: {response.status_code}")
+                # TRIGGERS ON ANY ERROR (429 Ban, 403 Datacenter Block, etc.)
+                print(f"OpenSky API Error {response.status_code}. Deploying GLOBAL Ghost Fleet...")
+                live_planes["states"] = generate_ghost_fleet()
         except Exception as e:
             pass
         
         time.sleep(60) 
+
+
+
+
 
 def on_message(ws, message):
     try:
