@@ -29,7 +29,6 @@ def run_plane_fetcher():
     url = 'https://opensky-network.org/api/states/all'
     my_opensky_auth = (os.environ.get("OPENSKY_USERNAME", "wallma"), os.environ.get("OPENSKY_PASSWORD", "")) 
 
-    # Triggers Ghost Fleet immediately on boot so the map is never empty
     live_planes["states"] = generate_ghost_fleet()
 
     while True:
@@ -81,9 +80,12 @@ def run_websocket():
 def run_satellite_tracker():
     stations_url = 'https://celestrak.org/NORAD/elements/gp.php?GROUP=active&FORMAT=tle'
     ts = load.timescale()
-    satellites = load.tle_file(stations_url)
-    swarm = [sat for sat in satellites if 'STARLINK' in sat.name or 'ISS' in sat.name]
-    tracked_sats = random.sample(swarm, min(100, len(swarm)))
+    try:
+        satellites = load.tle_file(stations_url)
+        swarm = [sat for sat in satellites if 'STARLINK' in sat.name or 'ISS' in sat.name]
+        tracked_sats = random.sample(swarm, min(100, len(swarm)))
+    except Exception:
+        tracked_sats = []
 
     while True:
         try:
@@ -112,4 +114,3 @@ def get_satellites(): return jsonify(live_satellites)
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=7860)
-# Force HF Rebuild

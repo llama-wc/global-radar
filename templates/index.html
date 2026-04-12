@@ -33,15 +33,7 @@
         let globeInstance = Globe()(document.getElementById('globeViz'));
         let isDark = true;
 
-        // Bypasses the CDN block
         const darkGlobeTex = 'https://raw.githubusercontent.com/vasturiano/three-globe/master/example/img/earth-dark.jpg';
-        
-        const lightCanvas = document.createElement('canvas');
-        lightCanvas.width = 4; lightCanvas.height = 4;
-        const ctx = lightCanvas.getContext('2d');
-        ctx.fillStyle = '#b7d5eb';
-        ctx.fillRect(0, 0, 4, 4);
-        const lightGlobeTex = lightCanvas.toDataURL();
 
         function applyTheme() {
             if (isDark) {
@@ -53,12 +45,12 @@
                 globeInstance.globeMaterial().specular.set('#aaaaaa');
                 globeInstance.globeMaterial().shininess = 15;
             } else {
-                globeInstance.globeImageUrl(lightGlobeTex)
+                // Set to null to remove texture, then color the sphere directly for slate-grey oceans!
+                globeInstance.globeImageUrl(null)
                     .polygonCapColor(() => '#ffffff')
                     .polygonStrokeColor(() => '#cbd5e0');
 
-                // RESTORED: Prevents the blinding white blowout
-                globeInstance.globeMaterial().color.set('#ffffff');
+                globeInstance.globeMaterial().color.set('#e3e7ed'); 
                 globeInstance.globeMaterial().specular.set('#000000');
                 globeInstance.globeMaterial().shininess = 0;
             }
@@ -80,7 +72,6 @@
             applyTheme();
         });
 
-        // RESTORED: Exact data processing functions from your working version
         function loadData() {
             fetch('/api/planes').then(res => res.json()).then(data => {
                 const planes = (data.states || []).map(p => ({ lat: p[6], lng: p[5], name: p[1] }));
@@ -103,7 +94,6 @@
             }).catch(() => {});
         }
 
-        // Fire immediately on load, then loop
         loadData();
         setInterval(loadData, 5000);
     </script>
